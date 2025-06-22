@@ -1,5 +1,5 @@
 <div align="center">
-> 🚀 **Branche de développement active : `Liberchat-6.1.16
+🚀 **Branche de développement active : `Liberchat-6.1.16
 
 # 🚩✊ Liberchat — La Commune Numérique
 
