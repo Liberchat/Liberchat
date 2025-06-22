@@ -289,7 +289,7 @@ Start Command: npm start
 Déployez Liberchat en une commande grâce à l'image officielle Docker :
 
 - 📦 [Image Docker sur Docker Hub](https://hub.docker.com/r/liberchat/liberchat)
-- 🐙 [Sources & Dockerfile sur GitHub](https://github.com/Liberchat/Liberchat/tree/Liberchat6.1.16/docker)
+- 🐙 [Sources & Dockerfile sur GitHub](https://github.com/Liberchat/Liberchat-docker)
 
 ```bash
 docker run -d -p 3000:3000 -e ALLOWED_DOMAINS="https://votre-domaine.com" liberchat/liberchat:6.1.16
