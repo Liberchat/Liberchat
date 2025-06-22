@@ -217,19 +217,7 @@ Le wiki est accessible dans le dossier `docs/` du dépôt ou en ligne sur GitHub
 npm install
 
 # 2. Lancez en mode développement
-npm run dev
-```
-
-## 📦 Releases
-
-### Dernière version
-[![Release](https://img.shields.io/badge/Release-Beta%201.0.0-red?style=for-the-badge)](#)
-
-La dernière version (Beta 1.0.0) inclut :
-- Le nouveau logo moderne
-- L'interface de chat en temps réel
-- Le support des messages texte
-
+npm run 
 <div align="center">
 
 ## 🛠️ Technologies Utilisées
