@@ -18,36 +18,28 @@ const __dirname = dirname(__filename);
 const logger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
 
 const app = express();
+app.set('trust proxy', 1); // Pour accepter les headers X-Forwarded-For derrière un reverse proxy
 
 // Helmet pour sécuriser les headers HTTP
 const allowedDomains = (process.env.ALLOWED_DOMAINS || '').split(',').map(d => d.trim()).filter(Boolean);
-const allAllowedDomains = [];
-allowedDomains.forEach(domain => {
-  // Ajoute http et https si ce n'est pas déjà précisé
-  if (domain.startsWith('http://') || domain.startsWith('https://')) {
-    allAllowedDomains.push(domain);
-  } else {
-    allAllowedDomains.push('http://' + domain);
-    allAllowedDomains.push('https://' + domain);
-  }
-});
-
 const defaultCsp = {
   defaultSrc: ["'self'"],
   mediaSrc: ["'self'", "data:"],
   imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://emoji-cdn.jsdelivr.net", "https://cdn.jsdelivr.net/npm/emoji-picker-react@*"],
-  scriptSrc: ["'self'", ...allAllowedDomains],
-  styleSrc: ["'self'", "'unsafe-inline'", ...allAllowedDomains],
-  connectSrc: ["'self'", "ws://localhost:3000", "wss://liberchat-3-0-1.onrender.com", "wss://liberchat.onrender.com", ...allAllowedDomains],
-  frameSrc: ["*", ...allAllowedDomains]
+  scriptSrc: ["'self'", "'unsafe-eval'"], // Autorise les scripts Vite/React et le service worker
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  connectSrc: ["'self'", "ws://localhost:3000", "wss://liberchat-3-0-1.onrender.com", "wss://liberchat.onrender.com"],
+  frameSrc: ["*"]
 };
-if (allAllowedDomains.length > 0) {
-  // Ajoute les domaines personnalisés à toutes les directives utiles
-  defaultCsp.connectSrc = defaultCsp.connectSrc.concat(allAllowedDomains);
-  defaultCsp.imgSrc = defaultCsp.imgSrc.concat(allAllowedDomains);
-  defaultCsp.frameSrc = defaultCsp.frameSrc.concat(allAllowedDomains);
-  defaultCsp.scriptSrc = defaultCsp.scriptSrc.concat(allAllowedDomains);
-  defaultCsp.styleSrc = defaultCsp.styleSrc.concat(allAllowedDomains);
+// Autorise le scope du service worker (register-sw.js, etc.)
+defaultCsp.workerSrc = ["'self'"];
+if (allowedDomains.length > 0) {
+  // Ajoute les domaines personnalisés à connectSrc et autres si besoin
+  defaultCsp.connectSrc = defaultCsp.connectSrc.concat(allowedDomains);
+  defaultCsp.imgSrc = defaultCsp.imgSrc.concat(allowedDomains);
+  defaultCsp.frameSrc = defaultCsp.frameSrc.concat(allowedDomains);
+  // Autorise aussi les workers sur les domaines personnalisés
+  defaultCsp.workerSrc = defaultCsp.workerSrc.concat(allowedDomains);
 }
 app.use(
   helmet({
@@ -61,7 +53,7 @@ app.use(
 const limiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 100 });
 app.use(limiter);
 
-// CORS : inclure dynamiquement http/https pour chaque domaine
+// CORS : mettre l'URL de ton frontend à la place
 app.use(cors({
   origin: [
     'https://liberchat-3-0-1.onrender.com',
@@ -70,7 +62,7 @@ app.use(cors({
     'https://liberchat.onrender.com',
     'capacitor://localhost',
     'http://localhost',
-    ...allAllowedDomains // Ajoute dynamiquement tous les domaines autorisés (http/https)
+    ...allowedDomains
   ],
   methods: ['GET', 'POST'],
   credentials: true
@@ -86,8 +78,7 @@ const io = new Server(server, {
       'http://localhost:3000',
       'https://liberchat.onrender.com',
       'capacitor://localhost',
-      'http://localhost',
-      ...allAllowedDomains // Ajoute dynamiquement tous les domaines autorisés (http/https)
+      'http://localhost'
     ],
     methods: ["GET", "POST"],
     credentials: true
