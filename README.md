@@ -1,5 +1,4 @@
 
-
 > 🚀 **Branche de développement active : `Liberchat-6.1.16
 
 # 🚩✊ Liberchat — La Commune Numérique
