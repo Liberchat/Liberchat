@@ -225,10 +225,11 @@ npm run dev
 ### Dernière version
 [![Release](https://img.shields.io/badge/Release-Beta%201.0.0-red?style=for-the-badge)](#)
 
-La dernière version (Beta 1.0.0) inclut :
+La dernière version (version 2.5) inclut :
 - Le nouveau logo moderne
 - L'interface de chat en temps réel
 - Le support des messages texte
+- Auto Hégergement
 
 <div align="center">
 
@@ -294,7 +295,6 @@ Déployez Liberchat en une commande grâce à l'image officielle Docker :
 docker run -d -p 3000:3000 -e ALLOWED_DOMAINS="https://votre-domaine.com" liberchat/liberchat:6.1.16
 ```
 
-Pour une configuration avancée, consultez le [README Docker](https://github.com/Liberchat/Liberchat/blob/Liberchat6.1.16/docker/README.md) ou le [docker-compose.example.yml](https://github.com/Liberchat/Liberchat/blob/Liberchat6.1.16/docker/docker-compose.example.yml).
 
 ## 🌟 Utilisation
 
