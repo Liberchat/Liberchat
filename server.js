@@ -24,16 +24,20 @@ const defaultCsp = {
   defaultSrc: ["'self'"],
   mediaSrc: ["'self'", "data:"],
   imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://emoji-cdn.jsdelivr.net", "https://cdn.jsdelivr.net/npm/emoji-picker-react@*"],
-  scriptSrc: ["'self'"],
+  scriptSrc: ["'self'", "'unsafe-eval'"], // Autorise les scripts Vite/React et le service worker
   styleSrc: ["'self'", "'unsafe-inline'"],
   connectSrc: ["'self'", "ws://localhost:3000", "wss://liberchat-3-0-1.onrender.com", "wss://liberchat.onrender.com"],
   frameSrc: ["*"]
 };
+// Autorise le scope du service worker (register-sw.js, etc.)
+defaultCsp.workerSrc = ["'self'"];
 if (allowedDomains.length > 0) {
   // Ajoute les domaines personnalisés à connectSrc et autres si besoin
   defaultCsp.connectSrc = defaultCsp.connectSrc.concat(allowedDomains);
   defaultCsp.imgSrc = defaultCsp.imgSrc.concat(allowedDomains);
   defaultCsp.frameSrc = defaultCsp.frameSrc.concat(allowedDomains);
+  // Autorise aussi les workers sur les domaines personnalisés
+  defaultCsp.workerSrc = defaultCsp.workerSrc.concat(allowedDomains);
 }
 app.use(
   helmet({
