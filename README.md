@@ -1,5 +1,6 @@
 <div align="center">
-🚀 **Branche de développement active : `Liberchat-6.1.16
+
+> 🚀 **Branche de développement active : `Liberchat-6.1.16
 
 # 🚩✊ Liberchat — La Commune Numérique
 
@@ -282,6 +283,19 @@ Build Command: npm install --production=false && npm run build
 Start Command: npm start
 ```
 
+## 🚀 Installation rapide avec Docker
+
+Déployez Liberchat en une commande grâce à l'image officielle Docker :
+
+- 📦 [Image Docker sur Docker Hub](https://hub.docker.com/r/liberchat/liberchat)
+- 🐙 [Sources & Dockerfile sur GitHub](https://github.com/Liberchat/Liberchat/tree/Liberchat6.1.16/docker)
+
+```bash
+docker run -d -p 3000:3000 -e ALLOWED_DOMAINS="https://votre-domaine.com" liberchat/liberchat:6.1.16
+```
+
+Pour une configuration avancée, consultez le [README Docker](https://github.com/Liberchat/Liberchat/blob/Liberchat6.1.16/docker/README.md) ou le [docker-compose.example.yml](https://github.com/Liberchat/Liberchat/blob/Liberchat6.1.16/docker/docker-compose.example.yml).
+
 ## 🌟 Utilisation
 
 ### Démarrage (pour les utilisateurs)
@@ -365,6 +379,10 @@ Un script automatisé est fourni pour installer et configurer facilement Liberch
 
 Pour une prise en main rapide, consultez le guide pas à pas pour novice :
 👉 [docs/Guide_novice.md](docs/Guide_novice.md)
+
+
+
+
 
 
 
