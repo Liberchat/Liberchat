@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script d'auto-hébergement semi-automatisé : un seul choix, tout le reste automatique
+# Script d'auto-hébergement semi-automatisé robuste pour Liberchat
 # Usage : sudo ./auto_hebergement.sh
 
 set -e
@@ -13,14 +13,16 @@ fi
 default_port=3000
 admin_mail="admin@localhost"
 
-# Détection automatique du port de l'application (par défaut 3000)
+# Détection automatique du port de l'application (par défaut 3000, sinon propose un autre)
 if lsof -i:$default_port &>/dev/null; then
-  app_port=$default_port
+  echo "Le port $default_port est déjà utilisé."
+  read -p "Entrez un port libre pour l'application [défaut: 3001] : " user_port
+  app_port=${user_port:-3001}
 else
   app_port=$default_port
 fi
-read -p "Port de l'application à proxyfier [défaut: $app_port] : " user_port
-app_port=${user_port:-$app_port}
+read -p "Port de l'application à proxyfier [défaut: $app_port] : " user_port2
+app_port=${user_port2:-$app_port}
 
 # Installation et build de l’application Node.js
 if [ -f package.json ]; then
@@ -166,10 +168,18 @@ EOF
   echo "Votre service onion personnalisé est disponible à : $ONION_ADDR"
 }
 
-# Fonction pour ajouter un domaine à la variable ALLOWED_DOMAINS dans .env
+# Fonction pour ajouter un domaine à la variable ALLOWED_DOMAINS dans .env (avec préfixe complet)
 add_domain_to_env() {
   local domain="$1"
   local env_file=".env"
+  # Ajoute http:// ou https:// si absent
+  if [[ ! "$domain" =~ ^http ]]; then
+    if [[ "$domain" =~ \.onion$ ]]; then
+      domain="http://$domain"
+    else
+      domain="https://$domain"
+    fi
+  fi
   if [ ! -f "$env_file" ]; then
     echo "ALLOWED_DOMAINS=$domain" > "$env_file"
     echo "[Auto] Fichier .env créé avec $domain."
@@ -265,82 +275,96 @@ banner() {
 
 banner
 
-# Menu principal
-clear
-echo -e "${RED}${BOLD}Menu d'auto-hébergement anarchiste :${NC}"
-echo -e "${GREEN}1) Héberger sur un domaine personnalisé (HTTPS)${NC}"
-echo -e "${GREEN}2) Héberger sur un sous-domaine (HTTPS)${NC}"
-echo -e "${YELLOW}3) Héberger en service onion (Tor)${NC}"
-echo -e "${YELLOW}4) Héberger en service onion (Tor) avec préfixe personnalisé${NC}"
-echo -e "${CYAN}5) Héberger en local (192.168.x.x ou 127.0.0.1)${NC}"
-echo -e "${RED}6) Quitter${NC}"
-read -p "${BOLD}Choisissez une option [1-6] : ${NC}" CHOICE
+# Menu principal (robuste)
+while true; do
+  clear
+  banner
+  echo -e "${RED}${BOLD}Menu d'auto-hébergement anarchiste :${NC}"
+  echo -e "${GREEN}1) Héberger sur un domaine personnalisé (HTTPS)${NC}"
+  echo -e "${GREEN}2) Héberger sur un sous-domaine (HTTPS)${NC}"
+  echo -e "${YELLOW}3) Héberger en service onion (Tor)${NC}"
+  echo -e "${YELLOW}4) Héberger en service onion (Tor) avec préfixe personnalisé${NC}"
+  echo -e "${CYAN}5) Héberger en local (192.168.x.x ou 127.0.0.1)${NC}"
+  echo -e "${RED}6) Quitter${NC}"
+  read -p "${BOLD}Choisissez une option [1-6] : ${NC}" CHOICE
 
-if [[ "$CHOICE" == "1" || "$CHOICE" == "2" ]]; then
-  read -p "Entrez votre (sous-)domaine (ex: monsite.fr ou sub.monsite.fr) : " DOMAIN
-  add_domain_to_env "$DOMAIN"
-  echo "Choix du serveur web :"
-  echo "1) Nginx (recommandé)"
-  echo "2) Apache"
-  read -p "Votre choix [1-2, défaut: 1] : " WEBCHOICE
-  WEBCHOICE=${WEBCHOICE:-1}
-  if [ "$WEBCHOICE" == "1" ]; then
-    install_nginx
-    install_certbot_nginx
-    auto_https_nginx "$DOMAIN"
-  elif [ "$WEBCHOICE" == "2" ]; then
-    install_apache
-    install_certbot_apache
-    auto_https_apache "$DOMAIN"
-  else
-    echo "Option serveur web invalide."
-    exit 1
+  case "$CHOICE" in
+    1|2)
+      read -p "Entrez votre (sous-)domaine (ex: monsite.fr ou sub.monsite.fr) : " DOMAIN
+      add_domain_to_env "$DOMAIN"
+      echo "Choix du serveur web :"
+      echo "1) Nginx (recommandé)"
+      echo "2) Apache"
+      read -p "Votre choix [1-2, défaut: 1] : " WEBCHOICE
+      WEBCHOICE=${WEBCHOICE:-1}
+      if [ "$WEBCHOICE" == "1" ]; then
+        install_nginx
+        install_certbot_nginx
+        auto_https_nginx "$DOMAIN"
+      elif [ "$WEBCHOICE" == "2" ]; then
+        install_apache
+        install_certbot_apache
+        auto_https_apache "$DOMAIN"
+      else
+        echo "Option serveur web invalide."
+        continue
+      fi
+      ;;
+    3)
+      force_tor_service
+      check_and_repair_tor
+      auto_tor
+      ONION_ADDR=$(cat /var/lib/tor/hidden_service/hostname 2>/dev/null || echo "")
+      if [ -n "$ONION_ADDR" ]; then
+        add_domain_to_env "$ONION_ADDR"
+        echo -e "\n\033[1;32mVotre adresse Liberchat .onion (union) :\033[0m $ONION_ADDR"
+        echo -e "\033[1;33mOuvrez cette adresse dans Tor Browser pour accéder à votre chat en union !\033[0m\n"
+      fi
+      ;;
+    4)
+      force_tor_service
+      check_and_repair_tor
+      custom_tor
+      ONION_ADDR=$(cat /var/lib/tor/hidden_service/hostname 2>/dev/null || echo "")
+      if [ -n "$ONION_ADDR" ]; then
+        add_domain_to_env "$ONION_ADDR"
+        echo -e "\n\033[1;32mVotre adresse Liberchat .onion personnalisée (union) :\033[0m $ONION_ADDR"
+        echo -e "\033[1;33mOuvrez cette adresse dans Tor Browser pour accéder à votre chat en union !\033[0m\n"
+      fi
+      ;;
+    5)
+      echo "Configuration pour un accès local (LAN ou localhost) en cours..."
+      LOCAL_IP=$(hostname -I | awk '{print $1}')
+      echo -e "\n\033[1;32mVotre adresse locale :\033[0m http://$LOCAL_IP:$app_port"
+      echo -e "\033[1;33mOuvrez cette adresse sur vos appareils du réseau local.\033[0m\n"
+      add_domain_to_env "http://$LOCAL_IP:$app_port"
+      add_domain_to_env "http://127.0.0.1:$app_port"
+      add_domain_to_env "http://localhost:$app_port"
+      ;;
+    6)
+      echo "Abandon."
+      exit 0
+      ;;
+    *)
+      echo "Option invalide. Veuillez choisir entre 1 et 6."
+      sleep 2
+      ;;
+  esac
+  echo -e "${GREEN}Configuration terminée ! Vive la Commune numérique !${NC}"
+  read -p "Voulez-vous lancer automatiquement l'application en mode production ? (npm run build + npm start) [O/n] : " AUTOLAUNCH
+  if [[ "$AUTOLAUNCH" =~ ^[oO]$ || -z "$AUTOLAUNCH" ]]; then
+    if ! pgrep -f "node server.js" >/dev/null; then
+      echo "Build du frontend (npm run build)..."
+      npm run build || { echo "Échec du build frontend."; exit 1; }
+      echo "Lancement du backend (npm start)..."
+      nohup npm start > prod.log 2>&1 &
+      echo $! > app.pid
+      echo "Application Liberchat (production) démarrée en arrière-plan (PID $(cat app.pid))."
+      echo "Consultez prod.log pour les logs."
+    else
+      echo "L'application tourne déjà."
+    fi
   fi
-elif [ "$CHOICE" == "3" ]; then
-  force_tor_service
-  check_and_repair_tor
-  auto_tor
-  ONION_ADDR=$(cat /var/lib/tor/hidden_service/hostname 2>/dev/null || echo "")
-  if [ -n "$ONION_ADDR" ]; then
-    add_domain_to_env "$ONION_ADDR"
-    echo -e "\n\033[1;32mVotre adresse Liberchat .onion (union) :\033[0m $ONION_ADDR"
-    echo -e "\033[1;33mOuvrez cette adresse dans Tor Browser pour accéder à votre chat en union !\033[0m\n"
-  fi
-elif [ "$CHOICE" == "4" ]; then
-  force_tor_service
-  check_and_repair_tor
-  custom_tor
-  ONION_ADDR=$(cat /var/lib/tor/hidden_service/hostname 2>/dev/null || echo "")
-  if [ -n "$ONION_ADDR" ]; then
-    add_domain_to_env "$ONION_ADDR"
-    echo -e "\n\033[1;32mVotre adresse Liberchat .onion personnalisée (union) :\033[0m $ONION_ADDR"
-    echo -e "\033[1;33mOuvrez cette adresse dans Tor Browser pour accéder à votre chat en union !\033[0m\n"
-  fi
-elif [ "$CHOICE" == "5" ]; then
-  echo "Configuration pour un accès local (LAN ou localhost) en cours..."
-  LOCAL_IP=$(hostname -I | awk '{print $1}')
-  echo -e "\n\033[1;32mVotre adresse locale :\033[0m http://$LOCAL_IP:$app_port"
-  echo -e "\033[1;33mOuvrez cette adresse sur vos appareils du réseau local.\033[0m\n"
-  add_domain_to_env "$LOCAL_IP"
-  add_domain_to_env "127.0.0.1"
-  add_domain_to_env "localhost"
-elif [ "$CHOICE" == "6" ]; then
-  echo "Abandon."
-  exit 0
-else
-  echo "Option invalide."
-  exit 1
-fi
+  read -p "Appuyez sur Entrée pour revenir au menu principal..."
+done
 
-echo -e "${GREEN}Configuration terminée ! Vive la Commune numérique !${NC}"
-echo "Voulez-vous lancer automatiquement l'application en mode production ? (npm run build + npm start) [O/n] : "
-read AUTOLAUNCH
-if [[ "$AUTOLAUNCH" =~ ^[oO]$ || -z "$AUTOLAUNCH" ]]; then
-  echo "Build du frontend (npm run build)..."
-  npm run build || { echo "Échec du build frontend."; exit 1; }
-  echo "Lancement du backend (npm start)..."
-  nohup npm start > prod.log 2>&1 &
-  echo $! > app.pid
-  echo "Application Liberchat (production) démarrée en arrière-plan (PID $(cat app.pid))."
-  echo "Consultez prod.log pour les logs."
-fi
