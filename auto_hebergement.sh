@@ -13,14 +13,15 @@ fi
 default_port=3000
 admin_mail="admin@localhost"
 
-# Détection automatique du port de l'application (par défaut 3000, sinon propose un autre)
-if lsof -i:$default_port &>/dev/null; then
-  echo "Le port $default_port est déjà utilisé."
-  read -p "Entrez un port libre pour l'application [défaut: 3001] : " user_port
-  app_port=${user_port:-3001}
-else
-  app_port=$default_port
-fi
+# Détection automatique du port de l'application (propose le prochain port libre)
+find_free_port() {
+  local port=$1
+  while lsof -i:$port &>/dev/null; do
+    port=$((port+1))
+  done
+  echo $port
+}
+app_port=$(find_free_port 3000)
 read -p "Port de l'application à proxyfier [défaut: $app_port] : " user_port2
 app_port=${user_port2:-$app_port}
 
@@ -168,7 +169,7 @@ EOF
   echo "Votre service onion personnalisé est disponible à : $ONION_ADDR"
 }
 
-# Fonction pour ajouter un domaine à la variable ALLOWED_DOMAINS dans .env (avec préfixe complet)
+# Fonction pour ajouter un domaine à la variable ALLOWED_DOMAINS dans .env (concaténation propre)
 add_domain_to_env() {
   local domain="$1"
   local env_file=".env"
@@ -187,7 +188,13 @@ add_domain_to_env() {
     if grep -q '^ALLOWED_DOMAINS=' "$env_file"; then
       # Ajoute le domaine s'il n'est pas déjà présent
       if ! grep -q "$domain" "$env_file"; then
-        sed -i "s|^ALLOWED_DOMAINS=|ALLOWED_DOMAINS=$domain,|" "$env_file"
+        # Ajout propre (pas de virgule en trop)
+        current=$(grep '^ALLOWED_DOMAINS=' "$env_file" | cut -d'=' -f2)
+        if [ -z "$current" ]; then
+          sed -i "s|^ALLOWED_DOMAINS=.*|ALLOWED_DOMAINS=$domain|" "$env_file"
+        else
+          sed -i "s|^ALLOWED_DOMAINS=.*|ALLOWED_DOMAINS=$current,$domain|" "$env_file"
+        fi
         echo "[Auto] Domaine $domain ajouté à ALLOWED_DOMAINS."
       fi
     else
@@ -352,10 +359,15 @@ while true; do
   esac
   echo -e "${GREEN}Configuration terminée ! Vive la Commune numérique !${NC}"
   read -p "Voulez-vous lancer automatiquement l'application en mode production ? (npm run build + npm start) [O/n] : " AUTOLAUNCH
+  # Lancement automatique : build seulement si le dossier build/dist n'existe pas
   if [[ "$AUTOLAUNCH" =~ ^[oO]$ || -z "$AUTOLAUNCH" ]]; then
     if ! pgrep -f "node server.js" >/dev/null; then
-      echo "Build du frontend (npm run build)..."
-      npm run build || { echo "Échec du build frontend."; exit 1; }
+      if [ ! -d build ] && [ ! -d dist ]; then
+        echo "Build du frontend (npm run build)..."
+        npm run build || { echo "Échec du build frontend."; exit 1; }
+      else
+        echo "Le build frontend existe déjà, saut du build."
+      fi
       echo "Lancement du backend (npm start)..."
       nohup npm start > prod.log 2>&1 &
       echo $! > app.pid
