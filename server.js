@@ -47,12 +47,9 @@ const defaultCsp = {
     ...onionDomainsWss,
     ...onionDomainsHttps
   ],
-  frameSrc: [
-    "*",
-    ...onionDomainsHttps
-  ]
+  frameSrc: ["'self'", "data:", "blob:", "*", ...onionDomainsHttps],
 };
-defaultCsp.workerSrc = ["'self'", ...onionDomainsHttps];
+defaultCsp.workerSrc = ["'self'", "data:", "blob:", ...onionDomainsHttps];
 if (allowedDomains.length > 0) {
   defaultCsp.connectSrc = defaultCsp.connectSrc.concat(allowedDomains);
   defaultCsp.imgSrc = defaultCsp.imgSrc.concat(allowedDomains);
