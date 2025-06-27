@@ -25,7 +25,7 @@ const onionDomainsWss = onionDomains.map(d => d.replace(/^http(s)?:\/\//, '').re
 const onionDomainsHttps = onionDomains.map(d => d.replace(/^http(s)?:\/\//, '').replace(/\/$/, '')).map(d => `https://${d}`);
 const localDomains = allowedDomains.filter(d => /^(http:\/\/)?(\d+\.\d+\.\d+\.\d+)(:\d+)?$/.test(d));
 const defaultCsp = {
-  defaultSrc: ["'self'"],
+  defaultSrc: ["'self'", "data:", "blob:"],
   mediaSrc: ["'self'", "data:", "blob:"],
   imgSrc: [
     "'self'",
