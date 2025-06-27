@@ -62,13 +62,13 @@ if (localDomains.length > 0) {
   defaultCsp.frameSrc = defaultCsp.frameSrc.concat(localDomains);
   defaultCsp.workerSrc = defaultCsp.workerSrc.concat(localDomains);
 }
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: defaultCsp,
-    },
-  })
-);
+// app.use(
+//   helmet({
+//     contentSecurityPolicy: {
+//       directives: defaultCsp,
+//     },
+//   })
+// );
 
 // Limiteur de requêtes (anti-DDoS)
 const limiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 100 });
@@ -399,4 +399,5 @@ server.listen(PORT, '0.0.0.0', () => {
 // const socket = io('wss://votre-domaine.onion', { ... });
 
 export default app;
+
 
