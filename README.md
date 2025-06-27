@@ -1,8 +1,11 @@
 <div align="center">
 
-> 🚀 **Branche de développement active : `Liberchat-6.1.16
+> 🚀 **Branche de développement active : `Liberchat-6.1.20
 
 # 🚩✊ Liberchat — La Commune Numérique
+
+> ℹ️ **Pensez à configurer vos variables d’environnement pour le multi-domaine !**
+> Voir : [`docs/variables_env.md`](docs/variables_env.md)
 
 <img src="public/images/liberchat-logo.svg" alt="Liberchat Logo" width="200"/>
 
