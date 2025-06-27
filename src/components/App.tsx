@@ -49,15 +49,26 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Connexion Socket.IO dynamique selon l’environnement
+    // Connexion Socket.IO dynamique selon l’environnement et le domaine
     let socketUrl = '';
     if (import.meta.env.DEV) {
-      socketUrl = 'http://localhost:3000';
+      // Multi-serveur en dev : utilise VITE_SOCKET_TARGET si défini, sinon localhost
+      socketUrl = import.meta.env.VITE_SOCKET_TARGET || 'http://localhost:3000';
+    } else if (import.meta.env.VITE_SOCKET_TARGET) {
+      // Multi-serveur en prod : utilise VITE_SOCKET_TARGET si défini
+      socketUrl = import.meta.env.VITE_SOCKET_TARGET;
     } else {
-      // Utilise l’origine de la page (supporte HTTPS, Tor, reverse proxy, etc.)
       let port = window.location.port;
       const portPart = port ? `:${port}` : '';
-      socketUrl = `${window.location.protocol}//${window.location.hostname}${portPart}`;
+      const isOnion = window.location.hostname.endsWith('.onion');
+      if (isOnion) {
+        // Toujours ws:// pour .onion, même si la page est en https
+        socketUrl = `ws://${window.location.hostname}${portPart}`;
+      } else if (window.location.protocol === 'https:') {
+        socketUrl = `wss://${window.location.hostname}${portPart}`;
+      } else {
+        socketUrl = `ws://${window.location.hostname}${portPart}`;
+      }
     }
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling']
