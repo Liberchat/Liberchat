@@ -21,29 +21,43 @@ const app = express();
 // Helmet pour sécuriser les headers HTTP
 const allowedDomains = (process.env.ALLOWED_DOMAINS || '').split(',').map(d => d.trim()).filter(Boolean);
 const onionDomains = allowedDomains.filter(d => d.includes('.onion'));
+const onionDomainsWss = onionDomains.map(d => d.replace(/^http(s)?:\/\//, '').replace(/\/$/, '')).map(d => `wss://${d}`);
+const onionDomainsHttps = onionDomains.map(d => d.replace(/^http(s)?:\/\//, '').replace(/\/$/, '')).map(d => `https://${d}`);
 const localDomains = allowedDomains.filter(d => /^(http:\/\/)?(\d+\.\d+\.\d+\.\d+)(:\d+)?$/.test(d));
 const defaultCsp = {
   defaultSrc: ["'self'"],
   mediaSrc: ["'self'", "data:", "blob:"],
-  imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://emoji-cdn.jsdelivr.net", "https://cdn.jsdelivr.net/npm/emoji-picker-react@*"],
+  imgSrc: [
+    "'self'",
+    "data:",
+    "blob:",
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+    "https://emoji-cdn.jsdelivr.net",
+    "https://cdn.jsdelivr.net/npm/emoji-picker-react@*",
+    ...onionDomainsHttps // Ajout explicite pour union
+  ],
   scriptSrc: ["'self'", "'unsafe-eval'"],
   styleSrc: ["'self'", "'unsafe-inline'"],
-  connectSrc: ["'self'", "ws://localhost:3000", "wss://liberchat-3-0-1.onrender.com", "wss://liberchat.onrender.com"],
-  frameSrc: ["*"]
+  connectSrc: [
+    "'self'",
+    "ws://localhost:3000",
+    "wss://liberchat-3-0-1.onrender.com",
+    "wss://liberchat.onrender.com",
+    ...onionDomainsWss,
+    ...onionDomainsHttps
+  ],
+  frameSrc: [
+    "*",
+    ...onionDomainsHttps
+  ]
 };
-defaultCsp.workerSrc = ["'self'"];
+defaultCsp.workerSrc = ["'self'", ...onionDomainsHttps];
 if (allowedDomains.length > 0) {
   defaultCsp.connectSrc = defaultCsp.connectSrc.concat(allowedDomains);
   defaultCsp.imgSrc = defaultCsp.imgSrc.concat(allowedDomains);
   defaultCsp.frameSrc = defaultCsp.frameSrc.concat(allowedDomains);
   defaultCsp.workerSrc = defaultCsp.workerSrc.concat(allowedDomains);
-}
-// Ajout automatique des .onion et IP locales pour union
-if (onionDomains.length > 0) {
-  defaultCsp.connectSrc = defaultCsp.connectSrc.concat(onionDomains);
-  defaultCsp.imgSrc = defaultCsp.imgSrc.concat(onionDomains);
-  defaultCsp.frameSrc = defaultCsp.frameSrc.concat(onionDomains);
-  defaultCsp.workerSrc = defaultCsp.workerSrc.concat(onionDomains);
 }
 if (localDomains.length > 0) {
   defaultCsp.connectSrc = defaultCsp.connectSrc.concat(localDomains);
@@ -63,7 +77,7 @@ app.use(
 const limiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 100 });
 app.use(limiter);
 
-// CORS : autorise tous les domaines déclarés, .onion, IP locales, union
+// CORS : autorise tous les domaines déclarés, .onion (https et wss), IP locales, union
 app.use(cors({
   origin: [
     'https://liberchat-3-0-1.onrender.com',
@@ -74,6 +88,8 @@ app.use(cors({
     'http://localhost',
     ...allowedDomains,
     ...onionDomains,
+    ...onionDomainsHttps,
+    ...onionDomainsWss,
     ...localDomains
   ],
   methods: ['GET', 'POST'],
@@ -93,6 +109,8 @@ const io = new Server(server, {
       'http://localhost',
       ...allowedDomains,
       ...onionDomains,
+      ...onionDomainsHttps,
+      ...onionDomainsWss,
       ...localDomains
     ],
     methods: ["GET", "POST"],
@@ -379,4 +397,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 });
 
+// NOTE : Vérifiez côté client que la connexion WebSocket utilise bien wss:// pour les .onion
+// Exemple côté client :
+// const socket = io('wss://votre-domaine.onion', { ... });
+
 export default app;
+
