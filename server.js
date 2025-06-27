@@ -28,7 +28,7 @@ const defaultCsp = {
   imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://emoji-cdn.jsdelivr.net", "https://cdn.jsdelivr.net/npm/emoji-picker-react@*"],
   scriptSrc: ["'self'", "'unsafe-eval'"],
   styleSrc: ["'self'", "'unsafe-inline'"],
-  connectSrc: ["'self'"],
+  connectSrc: ["'self'", "ws://localhost:3000", "wss://liberchat-3-0-1.onrender.com", "wss://liberchat.onrender.com"],
   frameSrc: ["*"]
 };
 defaultCsp.workerSrc = ["'self'"];
@@ -66,11 +66,15 @@ app.use(limiter);
 // CORS : autorise tous les domaines déclarés, .onion, IP locales, union
 app.use(cors({
   origin: [
+    'https://liberchat-3-0-1.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://liberchat.onrender.com',
+    'capacitor://localhost',
+    'http://localhost',
     ...allowedDomains,
     ...onionDomains,
-    ...localDomains,
-    // Valeur par défaut pour le dev si aucune variable n'est définie
-    ...(allowedDomains.length === 0 && onionDomains.length === 0 && localDomains.length === 0 ? ['http://localhost:5173', 'http://localhost:3000'] : [])
+    ...localDomains
   ],
   methods: ['GET', 'POST'],
   credentials: true
@@ -81,10 +85,15 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
+      'https://liberchat-3-0-1.onrender.com',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://liberchat.onrender.com',
+      'capacitor://localhost',
+      'http://localhost',
       ...allowedDomains,
       ...onionDomains,
-      ...localDomains,
-      ...(allowedDomains.length === 0 && onionDomains.length === 0 && localDomains.length === 0 ? ['http://localhost:5173', 'http://localhost:3000'] : [])
+      ...localDomains
     ],
     methods: ["GET", "POST"],
     credentials: true

@@ -1,11 +1,8 @@
 <div align="center">
 
-> 🚀 **Branche de développement active : `Liberchat-6.1.20
+> 🚀 **Branche de développement active : `Liberchat-6.1.16
 
 # 🚩✊ Liberchat — La Commune Numérique
-
-> ℹ️ **Pensez à configurer vos variables d’environnement pour le multi-domaine !**
-> Voir : [`docs/variables_env.md`](docs/variables_env.md)
 
 <img src="public/images/liberchat-logo.svg" alt="Liberchat Logo" width="200"/>
 
@@ -17,7 +14,7 @@
 [![Logiciel Libre](https://img.shields.io/badge/Logiciel_Libre-100%25-black?style=for-the-badge)](#)
 [![Anarcho-syndicaliste](https://img.shields.io/badge/Anarcho--syndicaliste-Noir_&_Rouge-black?style=for-the-badge&labelColor=ff2800)](#)
 
-[![Version](https://img.shields.io/badge/Version-6.1.20-red?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/Version-6.1.16-red?style=for-the-badge)](#)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
